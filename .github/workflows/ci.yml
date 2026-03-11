@@ -1,7 +1,13 @@
 name: DevOps CI Pipeline
+# Force Node.js 24 for all JS actions
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -10,29 +16,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    
       - name: Checkout code
         uses: actions/checkout@v3
 
+     
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 24
 
+     
       - name: Install dependencies
         run: |
-          cd service1
           npm install
 
+     
+      - name: Run unit tests
+        run: |
+          npm test
+
+     
       - name: Build Docker image
         run: |
-          docker build -t service1 ./service1
+          docker build -t my-microservice:latest .
 
-      - name: Trivy Scan
-        uses: aquasecurity/trivy-action@master
+     
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v2
         with:
-          image-ref: service1
+          image-ref: my-microservice:latest
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
 
+     
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        uses: sonarsource/sonarcloud-scan-action@v2
+        with:
+          projectKey: YOUR_PROJECT_KEY
+          organization: YOUR_ORG_NAME
+          token: ${{ secrets.SONAR_TOKEN }}
+
+    
+      - name: Push Docker image to Amazon ECR
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Skipping actual push for cost efficiency"
