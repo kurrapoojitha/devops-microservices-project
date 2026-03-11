@@ -1,7 +1,4 @@
-name: DevOps CI Pipeline
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+name: Cost-Free DevOps CI Pipeline
 
 on:
   push:
@@ -12,38 +9,52 @@ on:
       - main
 
 jobs:
-  build-and-scan:
+  ci-free:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Node.js environment (for tests or scripts)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 24
 
+      # 3️⃣ Install dependencies (if your project has package.json)
       - name: Install dependencies
-        run: npm install || echo "Skipping npm install if not needed"
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found, skipping npm install"
+          fi
 
+      # 4️⃣ Run unit tests (if any)
       - name: Run unit tests
-        run: npm test || echo "Skipping tests if not configured"
+        run: |
+          if [ -f package.json ]; then
+            npm test || echo "Unit tests failed, but continuing"
+          else
+            echo "No tests found, skipping"
+          fi
 
-      - name: Build Docker image
-        run: docker build -t my-microservice:latest . || echo "Skipping Docker build"
-
-      - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@main
-        with:
-          image-ref: my-microservice:latest
-          format: table
-          exit-code: 1
-          ignore-unfixed: true
-
+      # 5️⃣ Static code analysis with SonarCloud
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v1
         with:
           projectKey: YOUR_PROJECT_KEY
           organization: YOUR_ORG_NAME
           token: ${{ secrets.SONAR_TOKEN }}
+
+      # 6️⃣ Security scan with Trivy (local code scan, no Docker needed)
+      - name: Trivy code scan
+        uses: aquasecurity/trivy-action@main
+        with:
+          scan-type: fs
+          path: .
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
