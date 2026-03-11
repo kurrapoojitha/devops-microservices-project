@@ -17,13 +17,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js environment (for tests or scripts)
+      # 2️⃣ Setup Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 24
 
-      # 3️⃣ Install dependencies (if your project has package.json)
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           if [ -f package.json ]; then
@@ -32,7 +32,7 @@ jobs:
             echo "No package.json found, skipping npm install"
           fi
 
-      # 4️⃣ Run unit tests (if any)
+      # 4️⃣ Run unit tests
       - name: Run unit tests
         run: |
           if [ -f package.json ]; then
@@ -43,15 +43,15 @@ jobs:
 
       # 5️⃣ Static code analysis with SonarCloud
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v1
+        uses: sonarsource/sonarcloud-github-action@v2
         with:
           projectKey: YOUR_PROJECT_KEY
           organization: YOUR_ORG_NAME
           token: ${{ secrets.SONAR_TOKEN }}
 
-      # 6️⃣ Security scan with Trivy (local code scan, no Docker needed)
+      # 6️⃣ Security scan with Trivy (file system scan)
       - name: Trivy code scan
-        uses: aquasecurity/trivy-action@main
+        uses: aquasecurity/trivy-action@v0.38.0
         with:
           scan-type: fs
           path: .
